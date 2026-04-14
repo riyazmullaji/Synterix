@@ -6,22 +6,27 @@ import { PageSpinner } from "@/components/ui/Spinner";
 import { api, ApiError } from "@/lib/api";
 import type { Product } from "@/lib/types";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 
 const EMPTY: Partial<Product> = { sku: "", name: "", unit: "", description: "" };
 
 export default function CatalogPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const onboarding = searchParams.get("onboarding") === "1";
+  const [onboarding, setOnboarding] = useState(false);
   const [q, setQ] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Product> | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [seedingSample, setSeedingSample] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isOnboarding = new URLSearchParams(window.location.search).get("onboarding") === "1";
+    setOnboarding(isOnboarding);
+  }, []);
 
   const { data, error: fetchError, isLoading, mutate } = useSWR(
     ["products", q],

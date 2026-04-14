@@ -2,8 +2,8 @@
 
 import useSWR from "swr";
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { formatRelative, STATUS_LABELS, STATUS_COLORS } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -23,8 +23,13 @@ export default function SessionsPage() {
     { refreshInterval: 5000 }
   );
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const onboarding = searchParams.get("onboarding") === "1";
+  const [onboarding, setOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isOnboarding = new URLSearchParams(window.location.search).get("onboarding") === "1";
+    setOnboarding(isOnboarding);
+  }, []);
 
   const handleCreateSampleSession = async () => {
     setCreatingSample(true);
