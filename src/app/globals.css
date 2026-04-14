@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  --sidebar-width: 220px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #111827;
+  background: #f9fafb;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography scale */
+h1 { font-size: 1.375rem; font-weight: 600; line-height: 1.3; }
+h2 { font-size: 1.125rem; font-weight: 600; line-height: 1.3; }
+h3 { font-size: 0.9375rem; font-weight: 600; }
+
+/* Utility: mono */
+.mono { font-family: "SF Mono", "Fira Mono", "Consolas", monospace; font-size: 12px; }
+
+/* Scrollable panels */
+.scroll-y { overflow-y: auto; }
