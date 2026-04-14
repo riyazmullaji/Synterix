@@ -168,7 +168,13 @@ export const api = {
       form.append("file", file);
       const url = new URL(`/api/v1/catalog/products/import-csv`, typeof window === "undefined" ? "http://localhost" : window.location.origin);
       if (ORG_ID) url.searchParams.set("org_id", ORG_ID);
-      return fetch(`${url.pathname}${url.search}`, { method: "POST", body: form }).then(async (r) => {
+      return fetch(`${url.pathname}${url.search}`, {
+        method: "POST",
+        body: form,
+        headers: {
+          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+        },
+      }).then(async (r) => {
         if (!r.ok) {
           const e = await r.json().catch(() => ({}));
           throw new ApiError(r.status, e.detail ?? "CSV import failed", e.details);
