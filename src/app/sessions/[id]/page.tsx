@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import useSWR from "swr";
-import { api, ApiError } from "@/lib/api";
 import { LineItemsTable } from "@/components/review/LineItemsTable";
 import { TransparencyPanel } from "@/components/review/TransparencyPanel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { PageSpinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
-import { STATUS_LABELS, STATUS_COLORS, formatRelative } from "@/lib/utils";
+import { PageSpinner } from "@/components/ui/Spinner";
+import { api, ApiError } from "@/lib/api";
 import type { LineItem } from "@/lib/types";
+import { formatRelative, STATUS_COLORS, STATUS_LABELS } from "@/lib/utils";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
+import useSWR from "swr";
 
 export default function ReviewPage() {
   const params = useParams();

@@ -1,21 +1,27 @@
 "use client";
 
+import { Button } from "@/components/ui/Button";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { PageSpinner } from "@/components/ui/Spinner";
+import { api, ApiError } from "@/lib/api";
+import type { Product } from "@/lib/types";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import useSWR from "swr";
-import { api, ApiError } from "@/lib/api";
-import { Button } from "@/components/ui/Button";
-import { PageSpinner } from "@/components/ui/Spinner";
-import { ErrorMessage } from "@/components/ui/ErrorMessage";
-import type { Product } from "@/lib/types";
 
 const EMPTY: Partial<Product> = { sku: "", name: "", unit: "", description: "" };
 
 export default function CatalogPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const onboarding = searchParams.get("onboarding") === "1";
   const [q, setQ] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Product> | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [seedingSample, setSeedingSample] = useState(false);
 
   const { data, error: fetchError, isLoading, mutate } = useSWR(
     ["products", q],
@@ -67,6 +73,23 @@ export default function CatalogPage() {
     }
   };
 
+  const handleSeedSample = async () => {
+    setSeedingSample(true);
+    setError(null);
+    try {
+      const res = await api.catalog.seedSampleProducts();
+      await mutate();
+      alert(`Sample catalog ready: created ${res.created}, updated ${res.updated}`);
+      if (onboarding) {
+        router.replace("/sessions?onboarding=1");
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setSeedingSample(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -89,8 +112,21 @@ export default function CatalogPage() {
             {importing ? "Importing..." : "Import CSV"}
           </label>
           <Button onClick={() => setForm(EMPTY)}>Add Product</Button>
+          <Button variant="secondary" onClick={handleSeedSample} loading={seedingSample}>
+            Use Sample Catalog
+          </Button>
         </div>
       </div>
+
+      {onboarding && (
+        <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <p className="font-medium">Welcome! Start by adding products.</p>
+          <p className="mt-1 text-blue-800">
+            Upload your own CSV, or click <strong>Use Sample Catalog</strong> for demo data.
+            After that, continue to <Link className="underline" href="/sessions?onboarding=1">Sessions</Link> to create a sample session.
+          </p>
+        </div>
+      )}
 
       <p className="text-xs text-gray-500 mb-4">
         CSV headers: sku,name,description,unit,moq,pack_size

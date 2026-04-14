@@ -101,6 +101,31 @@ export interface Rule {
   created_at: string;
 }
 
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  org_id: string;
+}
+
+export interface AuthTokenResponse {
+  access_token: string;
+  token_type: "bearer";
+  user: AuthUser;
+}
+
+export interface SeedSampleCatalogResponse {
+  message: string;
+  created: number;
+  updated: number;
+  total: number;
+}
+
+export interface SeedSampleSessionResponse {
+  message: string;
+  session_id: string;
+}
+
 export type PricingRuleStatus = "active" | "scheduled" | "expired";
 
 export interface PricingRule {

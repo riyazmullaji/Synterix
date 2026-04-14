@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { formatRelative, STATUS_LABELS, STATUS_COLORS } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -15,23 +16,52 @@ const STATUS_FILTERS = ["all", "review", "approved", "failed"];
 
 export default function SessionsPage() {
   const [filter, setFilter] = useState("all");
+  const [creatingSample, setCreatingSample] = useState(false);
   const { data, error, isLoading, mutate } = useSWR(
     ["sessions", filter],
     () => api.sessions.list(filter === "all" ? undefined : filter),
     { refreshInterval: 5000 }
   );
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const onboarding = searchParams.get("onboarding") === "1";
+
+  const handleCreateSampleSession = async () => {
+    setCreatingSample(true);
+    try {
+      const res = await api.sessions.createSample();
+      await mutate();
+      router.push(`/sessions/${res.session_id}`);
+    } finally {
+      setCreatingSample(false);
+    }
+  };
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
+      {onboarding && (
+        <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-medium">You are all set for a quick walkthrough.</p>
+          <p className="mt-1 text-emerald-800">
+            Click <strong>Create Sample Session</strong> to auto-generate a demo session and open the review screen.
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1>Sessions</h1>
           <p className="text-sm text-gray-500 mt-1">All document processing sessions</p>
         </div>
-        <Link href="/sessions/new">
-          <Button>New Session</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={handleCreateSampleSession} loading={creatingSample}>
+            Create Sample Session
+          </Button>
+          <Link href="/sessions/new">
+            <Button>New Session</Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -69,7 +99,14 @@ export default function SessionsPage() {
           <Link href="/sessions/new" className="text-gray-700 underline">
             Upload a document
           </Link>{" "}
-          to get started.
+          to get started, or{" "}
+          <button
+            className="text-gray-700 underline"
+            onClick={() => void handleCreateSampleSession()}
+          >
+            create a sample session
+          </button>
+          .
         </div>
       )}
 

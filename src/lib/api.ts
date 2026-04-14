@@ -3,8 +3,8 @@
  * All errors include the server's error message for display in the UI.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const ORG_ID = process.env.NEXT_PUBLIC_ORG_ID ?? "";
+const AUTH_TOKEN_KEY = "synterix_access_token";
 
 export class ApiError extends Error {
   constructor(
@@ -16,13 +16,28 @@ export class ApiError extends Error {
   }
 }
 
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export function clearAuthToken(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
 async function request<T>(
   path: string,
   options: RequestInit & { params?: Record<string, string | number | boolean | undefined> } = {}
 ): Promise<T> {
   const { params, ...init } = options;
 
-  const url = new URL(`${API_URL}${path}`);
+  const url = new URL(path, typeof window === "undefined" ? "http://localhost" : window.location.origin);
   if (ORG_ID) url.searchParams.set("org_id", ORG_ID);
   if (params) {
     for (const [k, v] of Object.entries(params)) {
@@ -30,8 +45,12 @@ async function request<T>(
     }
   }
 
-  const res = await fetch(url.toString(), {
-    headers: { "Content-Type": "application/json", ...init.headers },
+  const res = await fetch(`${url.pathname}${url.search}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+      ...init.headers,
+    },
     ...init,
   });
 
@@ -49,6 +68,27 @@ async function request<T>(
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
 export const api = {
+  auth: {
+    signup: (body: { username: string; email: string; password: string }) =>
+      request<import("./types").AuthTokenResponse>("/api/v1/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }).then((res) => {
+        setAuthToken(res.access_token);
+        return res;
+      }),
+    login: (body: { identifier: string; password: string }) =>
+      request<import("./types").AuthTokenResponse>("/api/v1/auth/login", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }).then((res) => {
+        setAuthToken(res.access_token);
+        return res;
+      }),
+    me: () => request<import("./types").AuthUser>("/api/v1/auth/me"),
+    logout: () => clearAuthToken(),
+  },
+
   sessions: {
     list: (status_filter?: string) =>
       request<{ sessions: import("./types").Session[]; total: number }>("/api/v1/sessions", {
@@ -64,9 +104,15 @@ export const api = {
     upload: (sessionId: string, file: File) => {
       const form = new FormData();
       form.append("file", file);
-      const url = new URL(`${API_URL}/api/v1/sessions/${sessionId}/upload`);
+      const url = new URL(`/api/v1/sessions/${sessionId}/upload`, typeof window === "undefined" ? "http://localhost" : window.location.origin);
       if (ORG_ID) url.searchParams.set("org_id", ORG_ID);
-      return fetch(url.toString(), { method: "POST", body: form }).then(async (r) => {
+      return fetch(`${url.pathname}${url.search}`, {
+        method: "POST",
+        body: form,
+        headers: {
+          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+        },
+      }).then(async (r) => {
         if (!r.ok) {
           const e = await r.json().catch(() => ({}));
           throw new ApiError(r.status, e.detail ?? `Upload failed`, e.details);
@@ -80,6 +126,10 @@ export const api = {
       request(`/api/v1/sessions/${sessionId}/approve`, {
         method: "POST",
         params: { export_format: format },
+      }),
+    createSample: () =>
+      request<import("./types").SeedSampleSessionResponse>("/api/v1/sessions/sample", {
+        method: "POST",
       }),
   },
 
@@ -116,9 +166,9 @@ export const api = {
     importProductsCsv: (file: File) => {
       const form = new FormData();
       form.append("file", file);
-      const url = new URL(`${API_URL}/api/v1/catalog/products/import-csv`);
+      const url = new URL(`/api/v1/catalog/products/import-csv`, typeof window === "undefined" ? "http://localhost" : window.location.origin);
       if (ORG_ID) url.searchParams.set("org_id", ORG_ID);
-      return fetch(url.toString(), { method: "POST", body: form }).then(async (r) => {
+      return fetch(`${url.pathname}${url.search}`, { method: "POST", body: form }).then(async (r) => {
         if (!r.ok) {
           const e = await r.json().catch(() => ({}));
           throw new ApiError(r.status, e.detail ?? "CSV import failed", e.details);
@@ -126,6 +176,10 @@ export const api = {
         return r.json();
       });
     },
+    seedSampleProducts: () =>
+      request<import("./types").SeedSampleCatalogResponse>("/api/v1/catalog/products/seed-sample", {
+        method: "POST",
+      }),
 
     listSynonyms: () =>
       request<{ synonyms: import("./types").Synonym[] }>("/api/v1/catalog/synonyms"),

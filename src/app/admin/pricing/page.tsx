@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import useSWR from "swr";
-import { api, ApiError } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PageSpinner } from "@/components/ui/Spinner";
+import { api, ApiError } from "@/lib/api";
+import type { PricingDiagnostics, PricingRule } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import type { ModelAlias, PricingDiagnostics, PricingRule } from "@/lib/types";
+import { useMemo, useState } from "react";
+import useSWR from "swr";
 
 const PROVIDERS = ["google", "openai", "anthropic", "local"];
 const UNIT_TYPES: Array<PricingRule["unit_type"]> = ["tokens", "characters", "requests", "minutes", "none"];

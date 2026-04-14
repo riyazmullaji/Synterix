@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { api, getAuthToken } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const NAV = [
   { href: "/sessions", label: "Sessions" },
@@ -15,6 +17,22 @@ const NAV = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    const authed = !!token;
+    setIsAuthed(authed);
+
+    if (!authed && pathname !== "/auth") {
+      router.replace("/auth");
+      return;
+    }
+    if (authed && pathname === "/auth") {
+      router.replace("/sessions");
+    }
+  }, [pathname, router]);
 
   return (
     <aside
@@ -28,7 +46,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {NAV.map(({ href, label }) => {
+        {NAV.filter(({ href }) => (isAuthed ? true : href === "/auth")).map(({ href, label }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
@@ -47,8 +65,20 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-5 py-3 border-t border-gray-200 text-xs text-gray-400">
-        v0.1.0
+      <div className="px-5 py-3 border-t border-gray-200 space-y-2">
+        {isAuthed && (
+          <button
+            onClick={() => {
+              api.auth.logout();
+              setIsAuthed(false);
+              router.replace("/auth");
+            }}
+            className="w-full rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+          >
+            Logout
+          </button>
+        )}
+        <div className="text-xs text-gray-400">v0.1.0</div>
       </div>
     </aside>
   );

@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-import useSWR from "swr";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { api } from "@/lib/api";
 import { formatSeconds, pct } from "@/lib/utils";
+import Link from "next/link";
+import { useState } from "react";
+import useSWR from "swr";
 
 const PERIODS = [7, 14, 30, 90];
 

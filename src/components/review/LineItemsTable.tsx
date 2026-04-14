@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { CONFIDENCE_COLORS } from "@/lib/utils";
 import type { LineItem, Product } from "@/lib/types";
+import { CONFIDENCE_COLORS } from "@/lib/utils";
+import { useState } from "react";
 
 interface LineItemsTableProps {
   items: LineItem[];
